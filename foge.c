@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 #include "foge.h"
 #include "mapa.h"
@@ -10,17 +11,30 @@ MAPA m;
 POSICAO heroi;
 
 int tempilula = 0;
+int debugar = 0;
 
 int x;
 int y;
 
 
-int acabou() {
-	POSICAO pos;
-	int perdeu = !encontramapa(&m, &pos, HEROI);
-	int ganhou = !encontramapa(&m, &pos, FANTASMA);
+int ganhou() {
 
-	return perdeu || ganhou;
+	POSICAO pos;
+
+	return !encontramapa(&m, &pos, FANTASMA);
+}
+
+int perdeu() {
+
+	POSICAO pos;
+
+	return !encontramapa(&m, &pos, HEROI);
+}
+
+int acabou() {
+
+	POSICAO pos;
+	return ganhou() || perdeu();
 }
 
 int ehdirecao(char direcao) {
@@ -29,7 +43,11 @@ int ehdirecao(char direcao) {
 		direcao == ESQUERDA ||
                 direcao == BAIXO ||
                 direcao == DIREITA ||
-                direcao == CIMA;
+                direcao == CIMA ||
+		direcao == ESQUERDA_M ||
+		direcao == BAIXO_M ||
+		direcao == DIREITA_M ||
+		direcao == CIMA_M;
 }
 
 void move(char direcao) {
@@ -43,15 +61,19 @@ void move(char direcao) {
 	switch(direcao) {
 
 		case ESQUERDA:
+		case ESQUERDA_M:
 			proximoy--;
 			break;
 		case BAIXO:
+		case BAIXO_M:
 			proximox++;
 			break;
 		case DIREITA:
+		case DIREITA_M:
 			proximoy++;
 			break;
 		case CIMA:
+		case CIMA_M:
 			proximox--;
 			break;
 
@@ -96,6 +118,8 @@ void fantasmas() {
 
 				if(encontrou) {
 					andanomapa(&m, i, j, xdestino, ydestino);
+				//	printf("\nX: %d\nY: %d", xdestino, ydestino);
+
 				}
 			}
 		}
@@ -117,25 +141,45 @@ int praondefantasmavai(int xatual, int yatual, int* xdestino, int* ydestino) {
 
 	srand(time(0));
 
-	for(int i = 0; i < 10; i++) {
+	int xheroi = heroi.x;
+	int yheroi = heroi.y;
 
-		int posicao = rand() % 4;
+	int maisproximo;
+	int indice;
 
-		if(podeandar(&m, FANTASMA, opcoes[posicao][0], opcoes[posicao][1])) {
+	for(int i = 0; i < 4; i++) {
 
-			*xdestino = opcoes[posicao][0];
-			*ydestino = opcoes[posicao][1];
+		if(i == 0) maisproximo = abs(yheroi - yatual);
+
+		if(abs(yheroi - opcoes[i][1]) < maisproximo) {
+
+			maisproximo = (yheroi - opcoes[i][1]);
+			indice = i;
+
+		}
+
+	}
+
+
+		if(podeandar(&m, FANTASMA, opcoes[indice][0], opcoes[indice][1])) {
+
+			*xdestino = opcoes[indice][0];
+			*ydestino = opcoes[indice][1];
 			return 1;
 
 		}
-	}
 
 	return 0;
 }
 
+
+
 void atualizamapa() {
 
 	printf("Pìlula: %s\n", (tempilula ? "SIM":"NAO"));
+
+	if(debug()) showxy();
+
         imprimemapa(&m);
 }
 
@@ -167,10 +211,24 @@ void explodepilula(int qtde) {
 	tempilula = 0;
 }
 
+int debug() {
+
+	return debugar == 1;
+}
+
+void showxy() {
+
+	printf("\nX: %d\nY: %d\n", heroi.x, heroi.y);
+}
+
 int main() {
 
 	lemapa(&m);
 	encontramapa(&m, &heroi, HEROI);
+
+	printf("\nDebugar? ");
+	scanf("%d", &debugar);
+	printf("\n\n");
 
 	do {
 
@@ -180,11 +238,21 @@ int main() {
 	scanf(" %c", &comando);
 
 	if(ehdirecao(comando)) move(comando);
-	if(comando == BOMBA) explodepilula(3);
+	if(comando == BOMBA || comando == BOMBA_M) explodepilula(3);
 
 	fantasmas();
 
 	} while(!acabou());
 
 	liberamapa(&m);
+
+	if(ganhou()) {
+
+		printf("\nParabens, voce ganhou!\n\n");
+
+	} else {
+
+		imprimeperdeu();
+	}
+
 }

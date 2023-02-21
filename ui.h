@@ -6,5 +6,6 @@
 
 void imprimeparte(char desenho[4][7], int parte);
 void imprimemapa(MAPA* m);
+void imprimeperdeu();
 
 #endif
