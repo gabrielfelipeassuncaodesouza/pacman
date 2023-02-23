@@ -15,7 +15,7 @@ int debugar = 0;
 
 int x;
 int y;
-
+int quadrante;
 
 int ganhou() {
 
@@ -111,16 +111,15 @@ void fantasmas() {
 
 			if(copia.matriz[i][j] == FANTASMA) {
 
-				int xdestino;
-				int ydestino;
+				int xdestino = 0;
+				int ydestino = 0;
 
 				int encontrou = praondefantasmavai(i, j, &xdestino, &ydestino);
 
 				if(encontrou) {
 					andanomapa(&m, i, j, xdestino, ydestino);
-				//	printf("\nX: %d\nY: %d", xdestino, ydestino);
-
-				}
+					printf("\nX: %d\nY: %d\n", xdestino, ydestino);
+				} else return;
 			}
 		}
 	}
@@ -128,46 +127,85 @@ void fantasmas() {
 	liberamapa(&copia);
 }
 
+void calculaquadrante(int x, int y) {
+
+	int distanciax = heroi.x - x;
+        int distanciay = heroi.y - y;
+
+	if(distanciax > 0 && distanciay > 0) quadrante = 0;
+	if(distanciax < 0 && distanciay > 0) quadrante = 1;
+	if(distanciax < 0 && distanciay < 0) quadrante = 2;
+	if(distanciax > 0 && distanciay < 0) quadrante = 3;
+
+	if(distanciax == 0 && distanciay > 0) quadrante = 4;
+	if(distanciax == 0 && distanciay < 0) quadrante = 5;
+	if(distanciax > 0 && distanciay == 0) quadrante = 6;
+	if(distanciax < 0 && distanciay == 0) quadrante = 7;
+}
+
 
 int praondefantasmavai(int xatual, int yatual, int* xdestino, int* ydestino) {
 
-	int opcoes[4][2] = {
+	int opcoes[8][2] = {
 
-		{ xatual, yatual + 1},
-		{ xatual + 1, yatual},
-		{ xatual, yatual - 1},
-		{ xatual - 1, yatual}
+		{ xatual + 1, yatual + 1},
+		{ xatual - 1, yatual + 1},
+		{ xatual - 1, yatual - 1},
+		{ xatual + 1, yatual - 1},
+		{ xatual    , yatual + 1},
+		{ xatual    , yatual - 1},
+		{ xatual + 1, yatual	},
+		{ xatual - 1, yatual	}
 	};
+
+	int indice = 0;
 
 	srand(time(0));
 
-	int xheroi = heroi.x;
-	int yheroi = heroi.y;
+	calculaquadrante(xatual, yatual);
 
-	int maisproximo;
-	int indice;
+	if(quadrante < 4) {
+		int choice = rand() % 100;
 
-	for(int i = 0; i < 4; i++) {
+		if(choice % 2 == 0){
 
-		if(i == 0) maisproximo = abs(yheroi - yatual);
+			if(podeandar(&m, FANTASMA, opcoes[quadrante][0], yatual)) {
 
-		if(abs(yheroi - opcoes[i][1]) < maisproximo) {
-
-			maisproximo = (yheroi - opcoes[i][1]);
-			indice = i;
-
-		}
-
-	}
-
-
-		if(podeandar(&m, FANTASMA, opcoes[indice][0], opcoes[indice][1])) {
-
-			*xdestino = opcoes[indice][0];
-			*ydestino = opcoes[indice][1];
+			*xdestino = opcoes[quadrante][0];
+			*ydestino = yatual;
 			return 1;
-
+			}
 		}
+
+		if(choice % 2 != 0){
+
+			if(podeandar(&m, FANTASMA, xatual, opcoes[quadrante][1])) {
+
+			*xdestino = xatual;
+			*ydestino = opcoes[quadrante][1];
+			return 1;
+			}
+		}
+
+	} else {
+
+		if(podeandar(&m, FANTASMA, opcoes[quadrante][0], opcoes[quadrante][1])) {
+
+		*xdestino = opcoes[quadrante][0];
+		*ydestino = opcoes[quadrante][1];
+		return 1;
+		} else {
+
+			int j = (rand() % 4) + 3;
+
+			if(podeandar(&m, FANTASMA, opcoes[j][0], opcoes[j][1])) {
+
+				*xdestino = opcoes[j][0];
+				*ydestino = opcoes[j][1];
+				return 1;
+			}
+		}
+	}
 
 	return 0;
 }
@@ -176,7 +214,7 @@ int praondefantasmavai(int xatual, int yatual, int* xdestino, int* ydestino) {
 
 void atualizamapa() {
 
-	printf("Pìlula: %s\n", (tempilula ? "SIM":"NAO"));
+	printf("\nPìlula: %s\n", (tempilula ? "SIM":"NAO"));
 
 	if(debug()) showxy();
 
